@@ -1,0 +1,424 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_SIZE 100
+
+// Structure to represent a task in the graph
+typedef struct Task {
+    int id;
+    int visited;
+    int num_dependencies;
+    int *dependencies;
+} Task;
+
+// Structure to represent a task node in the priority queue
+typedef struct TaskNode {
+    int task_id;
+    struct TaskNode *next;
+} TaskNode;
+
+// Structure to represent the priority queue
+typedef struct PriorityQueue {
+    TaskNode *head;
+    TaskNode *tail;
+} PriorityQueue;
+
+// Function to initialize a new task
+Task* init_task(int id) {
+    Task *task = malloc(sizeof(Task));
+    task->id = id;
+    task->visited = 0;
+    task->num_dependencies = 0;
+    task->dependencies = NULL;
+    return task;
+}
+
+// Function to add a dependency between two tasks
+void add_dependency(Task *task, int dependency_id) {
+    task->num_dependencies++;
+    task->dependencies = realloc(task->dependencies, sizeof(int) * task->num_dependencies);
+    task->dependencies[task->num_dependencies - 1] = dependency_id;
+}
+
+// Function to add a task node to the priority queue
+void enqueue(PriorityQueue *queue, int task_id) {
+    TaskNode *new_node = malloc(sizeof(TaskNode));
+    new_node->task_id = task_id;
+    new_node->next = NULL;
+
+    if (queue->tail == NULL) {
+        queue->head = new_node;
+        queue->tail = new_node;
+    } else {
+        queue->tail->next = new_node;
+        queue->tail = new_node;
+    }
+}
+
+// Function to remove a task node from the priority queue
+int dequeue(PriorityQueue *queue) {
+    if (queue->head == NULL) {
+        return -1;
+    }
+
+    int task_id = queue->head->task_id;
+    TaskNode *temp = queue->head;
+    queue->head = queue->head->next;
+
+    if (queue->head == NULL) {
+        queue->tail = NULL;
+    }
+
+    free(temp);
+    return task_id;
+}
+
+// Function to perform topological sorting on the graph
+void topological_sort(Task **graph, int num_tasks) {
+    int i, j, k, found, no_dependencies_found;
+    int *result = malloc(sizeof(int) * num_tasks);
+    int result_idx = 0;
+    PriorityQueue queue = {NULL, NULL};
+
+    // Add tasks with no dependencies to the priority queue
+    for (i = 0; i < num_tasks; i++) {
+        if (graph[i]->num_dependencies == 0) {
+            enqueue(&queue, graph[i]->id);
+        }
+    }
+
+    // Process tasks in the priority queue
+    while (queue.head != NULL) {
+        int task_id = dequeue(&queue);
+        result[result_idx] = task_id;
+        graph[task_id]->visited = 1;
+        result_idx++;
+
+        // Update dependencies of other tasks
+        for (i = 0; i < num_tasks; i++) {
+            if (!graph[i]->visited) {
+                found = 0;
+                for (j = 0; j < graph[i]->num_dependencies; j++) {
+                    if (graph[i]->dependencies[j] == task_id) {
+                        found = 1;
+                        break;
+                    }
+                }
+                if (found) {
+                    graph[i]->num_dependencies--;
+                    if (graph[i]->num_dependencies == 0){
+                        enqueue(&queue, graph[i]->id);
+                    }
+                                    enqueue(&queue, graph[i]->id);
+            }
+        }
+    }
+}
+
+// Check if all tasks have been visited
+for (i = 0; i < num_tasks; i++) {
+    if (!graph[i]->visited) {
+        printf("Error: Graph contains a cycle!\n");
+        free(result);
+        return;
+    }
+}
+
+// Print the topological sort
+printf("Topological Sort: ");
+for (i = 0; i < num_tasks; i++) {
+    printf("%d ", result[i]);
+}
+printf("\n");
+
+free(result);
+}
+
+// Function to free memory allocated to the graph
+void free_graph(Task **graph, int num_tasks) {
+int i, j;
+for (i = 0; i < num_tasks; i++) {
+free(graph[i]->dependencies);
+free(graph[i]);
+}
+free(graph);
+}
+
+int main() {
+int i, j, k;
+int num_tasks, num_dependencies, dependency_id;
+// Get input from user
+printf("Enter the number of tasks: ");
+scanf("%d", &num_tasks);
+
+Task **graph = malloc(sizeof(Task*) * num_tasks);
+
+for (i = 0; i < num_tasks; i++) {
+    graph[i] = init_task(i);
+
+    printf("Enter the number of dependencies for task %d: ", i);
+    scanf("%d", &num_dependencies);
+
+    for (j = 0; j < num_dependencies; j++) {
+        printf("Enter dependency %d for task %d: ", j, i);
+        scanf("%d", &dependency_id);
+        add_dependency(graph[i], dependency_id);
+    }
+}
+
+// Perform topological sorting on the graph
+topological_sort(graph, num_tasks);
+
+// Free memory allocated to the graph
+free_graph(graph, num_tasks);
+
+return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_SIZE 100
+
+// Structure to represent a task in the graph
+typedef struct Task {
+    int id;
+    int visited;
+    int num_dependencies;
+    int *dependencies;
+} Task;
+
+// Function to initialize a new task
+Task* init_task(int id) {
+    Task *task = malloc(sizeof(Task));
+    task->id = id;
+    task->visited = 0;
+    task->num_dependencies = 0;
+    task->dependencies = NULL;
+    return task;
+}
+
+// Function to add a dependency between two tasks
+void add_dependency(Task *task, int dependency_id) {
+    task->num_dependencies++;
+    task->dependencies = realloc(task->dependencies, sizeof(int) * task->num_dependencies);
+    task->dependencies[task->num_dependencies - 1] = dependency_id;
+}
+
+// Function to perform topological sorting on the graph
+void topological_sort(Task **graph, int num_tasks) {
+    int i, j, k, found, no_dependencies_found;
+    int *result = malloc(sizeof(int) * num_tasks);
+    int result_idx = 0;
+
+    // While there are unvisited tasks in the graph
+    while (result_idx < num_tasks) {
+        no_dependencies_found = 0;
+        // Find a task with no dependencies
+        for (i = 0; i < num_tasks; i++) {
+            found = 0;
+            if (!graph[i]->visited) {
+                for (j = 0; j < graph[i]->num_dependencies; j++) {
+                    for (k = 0; k < result_idx; k++) {
+                        if (graph[i]->dependencies[j] == result[k]) {
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        break;
+                    }
+                }
+                if (!found) {
+                    no_dependencies_found = 1;
+                    result[result_idx] = graph[i]->id;
+                    graph[i]->visited = 1;
+                    result_idx++;
+                    break;
+                }
+            }
+        }
+        if (!no_dependencies_found) {
+            printf("ERROR: Circular dependency detected in graph\n");
+            break;
+        }
+    }
+
+    // Print the result
+    if (result_idx == num_tasks) {
+        printf("Task execution order: ");
+        for (i = 0; i < num_tasks; i++) {
+            printf("%d ", result[i]);
+        }
+        printf("\n");
+    }
+
+    free(result);
+}
+
+int main() {
+    int i, j, num_tasks, num_dependencies, dependency_id;
+    Task **graph;
+
+    printf("Enter the number of tasks: ");
+    scanf("%d", &num_tasks);
+
+    // Allocate memory for the graph
+    graph = malloc(sizeof(Task*) * num_tasks);
+    for (i = 0; i < num_tasks; i++) {
+        graph[i] = init_task(i);
+    }
+
+    // Add dependencies between tasks
+    for (i = 0; i < num_tasks; i++) {
+        printf("Enter the number of dependencies for task %d: ", i);
+        scanf("%d", &num_dependencies);
+        for (j = 0; j < num_dependencies; j++) {
+            printf("Enter the ID of the dependency %d: ", j+1);
+            scanf("%d", &dependency_id);
+            add_dependency(graph[i], dependency_id);
+        }
+    }
+
+    // Perform topological sorting
+    topological_sort(graph, num_tasks);
+
+    // Free memory used by the graph
+    for (i = 0; i < num_tasks; i++) {
+free(graph[i]->dependencies);
+free(graph[i]);
+}
+free(graph);
+return 0;
+}
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_SIZE 100
+
+// Structure to represent a task in the graph
+typedef struct Task {
+    int id;
+    int visited;
+    int num_dependencies;
+    int *dependencies;
+} Task;
+
+// Function to initialize a new task
+Task* init_task(int id) {
+    Task *task = malloc(sizeof(Task));
+    task->id = id;
+    task->visited = 0;
+    task->num_dependencies = 0;
+    task->dependencies = NULL;
+    return task;
+}
+
+// Function to add a dependency between two tasks
+void add_dependency(Task *task, int dependency_id) {
+    task->num_dependencies++;
+    task->dependencies = realloc(task->dependencies, sizeof(int) * task->num_dependencies);
+    task->dependencies[task->num_dependencies - 1] = dependency_id;
+}
+
+// Function to perform topological sorting on the graph
+void topological_sort(Task **graph, int num_tasks) {
+    int i, j, k, found, no_dependencies_found;
+    int *result = malloc(sizeof(int) * num_tasks);
+    int result_idx = 0;
+
+    // While there are unvisited tasks in the graph
+    while (result_idx < num_tasks) {
+        no_dependencies_found = 0;
+        // Find a task with no dependencies
+        for (i = 0; i < num_tasks; i++) {
+            found = 0;
+            if (!graph[i]->visited) {
+                for (j = 0; j < graph[i]->num_dependencies; j++) {
+                    for (k = 0; k < result_idx; k++) {
+                        if (graph[i]->dependencies[j] == result[k]) {
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        break;
+                    }
+                }
+                if (!found) {
+                    no_dependencies_found = 1;
+                    result[result_idx] = graph[i]->id;
+                    graph[i]->visited = 1;
+                    result_idx++;
+                    break;
+                }
+            }
+        }
+        if (!no_dependencies_found) {
+            printf("ERROR: Circular dependency detected in graph\n");
+            break;
+        }
+    }
+
+    // Print the result
+    if (result_idx == num_tasks) {
+        printf("Task execution order: ");
+        for (i = 0; i < num_tasks; i++) {
+            printf("%d ", result[i]);
+        }
+        printf("\n");
+    }
+
+    free(result);
+}
+
+int main() {
+    int i, j, num_tasks, num_dependencies, dependency_id;
+    Task **graph;
+
+    printf("Enter the number of tasks: ");
+    scanf("%d", &num_tasks);
+
+    // Allocate memory for the graph
+    graph = malloc(sizeof(Task*) * num_tasks);
+    for (i = 0; i < num_tasks; i++) {
+        graph[i] = init_task(i);
+    }
+
+    // Add dependencies between tasks
+    for (i = 0; i < num_tasks; i++) {
+        printf("Enter the number of dependencies for task %d: ", i);
+        scanf("%d", &num_dependencies);
+
+    }
+
+    // Perform topological sorting
+    topological_sort(graph, num_tasks);
+
+    // Free memory used by the graph
+    for (i = 0; i < num_tasks; i++) {
+free(graph[i]->dependencies);
+free(graph[i]);
+}
+free(graph);
+return 0;
+}
